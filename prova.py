@@ -3,23 +3,33 @@
 import tkinter as tk
 import sqlite3 as sq 
 
+from tkinter import ttk
+
 def sort_list():
     """
     function to sort listbox items case insensitive
     """
-    temp_list = list(Lb.get(0, tk.END))
+    temp_list = list(docsList.get(0, tk.END))
     temp_list.sort(key=str.lower)
     # delete contents of present listbox
-    Lb.delete(0, tk.END)
+    docsList.delete(1, tk.END)
     # load listbox with sorted data
     for item in temp_list:
-        Lb.insert(tk.END, item)
+        docsList.insert(tk.END, item)
 
-def CurSelet(evt):
-    #value = Lb.get(Lb.curselection())
+def selectWork(ext):
+    index = str(1+worksList.curselection()[0])
+    docsList.delete(1, tk.END)
+    records = c.execute("SELECT * from docs where id_work="+index)
+    for row in records:
+        print("row:",row[3])
+        docsList.insert(1, row[3])
+
+def selectDoc(evt):
+    #value = docsList.get(docsList.curselection())
     # starts at 0
-    index = str(1+Lb.curselection()[0])
-#    value = int(Lb.get(tk.ANCHOR))
+    index = str(1+docsList.curselection()[0])
+#    value = int(docsList.get(tk.ANCHOR))
     records = c.execute("SELECT text from docs where ID="+index)
     text.delete("1.0", tk.END)
     for row in records:
@@ -28,13 +38,14 @@ def CurSelet(evt):
 con = sq.connect("annot.db") #dB browser for sqlite needed
 c = con.cursor() #SQLite command, to connect to db so 'execute' method can be called
 
-records = c.execute("SELECT * FROM docs")
 
 #filename = "data/00_original.txt"
 
 
 window = tk.Tk()
-    
+window.title("text annotation")   
+
+tabs = ttk.Notebook(window)    
 #configfile = tk.Text(root, width=800, height=600)
 #configfile.pack()
     
@@ -45,28 +56,48 @@ window = tk.Tk()
 #tk.mainloop()
 
 
+docsTab = ttk.Frame(tabs)
+worksTab = ttk.Frame(tabs)
 
-frame = tk.Frame(window)
-frame.place(x=10,y=10)
+tabs.add(docsTab, text="docs")
+tabs.add(worksTab, text="add sources")
+#docsTab.place(x=10,y=10)
 
-Lb = tk.Listbox(frame, selectmode=tk.SINGLE, height = 20, width = 25,font=("arial", 12)) 
-Lb.pack(side = tk.LEFT, fill = tk.Y)
-Lb.bind('<<ListboxSelect>>',CurSelet)
+worksList = tk.Listbox(docsTab, selectmode=tk.SINGLE, width = 20,font=("arial", 12)) 
+worksList.pack(side = tk.LEFT, fill = tk.Y)
+worksList.bind('<<ListboxSelect>>',selectWork)
 
-scroll = tk.Scrollbar(frame, orient = tk.VERTICAL) # set scrollbar to list box for when entries exceed size of list box
-scroll.config(command = Lb.yview)
-scroll.pack(side = tk.RIGHT, fill = tk.Y)
-Lb.config(yscrollcommand = scroll.set)     
+records = c.execute("SELECT * FROM works")
 
 for row in records:
-    Lb.insert(1,row[3])
+    worksList.insert(1,row[1])
+ 
+
+docsList = tk.Listbox(docsTab, selectmode=tk.SINGLE, width = 20,font=("arial", 12))
+docsList.place(x=100, y=10)
+
+docsList.pack(side = tk.LEFT, fill = tk.Y)
+docsList.bind('<<ListboxSelect>>',selectDoc)
+
+docsScroll = tk.Scrollbar(docsTab, orient = tk.VERTICAL) # set scroll bar to list box for when entries exceed size of list box
+docsScroll.config(command = docsList.yview)
+docsScroll.pack(side = tk.LEFT, fill = tk.Y)
+docsList.config(yscroll= docsScroll.set)     
+
+"""
+records = c.execute("SELECT * FROM docs")
+
+for row in records:
+    docsList.insert(1,row[3])
     print("title",row[2])
     print("date",row[3])
     print("text",row[4])
+"""
 
-text = tk.Text(window, width=200, height=50)
-text.place(x=100, y=10)    
+text = tk.Text(docsTab, width=150)
+text.place(x=500, y=10)    
 
+tabs.pack(expand=1, fill="both")
 window.mainloop()
 
 
