@@ -96,6 +96,7 @@ class UI(object):
         self._citedText.delete("1.0", tk.END)
         self._annotate.config(state=tk.DISABLED)
 
+    """    
     def addAnnotation(self):
         sql = 'INSERT INTO annotations (type,begin,end,id_doc) VALUES (?,?,?,?)'
     
@@ -106,6 +107,80 @@ class UI(object):
         self._db.execute(sql, values)
         self._dbConnection.commit()
         self.updateAnnotations()
+    """
+
+
+    def cancelAddPerson(self):
+        self._addPerson.destroy();
+
+    def okAddPerson(self):
+        print("JURJUR")
+
+    def addPerson(self):
+        self._addPerson = tk.Toplevel(self._window)
+        self._addPerson.geometry("400x300+800+300")
+        self._addPerson.title("add new person")
+
+        frame1 = tk.Frame(self._addPerson)
+        frame1.pack(fill=tk.X)
+
+        lbl1 = tk.Label(frame1, text="Name", width=6)
+        lbl1.pack(side=tk.LEFT, padx=5, pady=5)
+
+        entry1 = tk.Entry(frame1)
+        entry1.pack(fill=tk.X, padx=5, expand=True)
+
+        frame2 = tk.Frame(self._addPerson)
+        frame2.pack(fill=tk.BOTH, expand=True)
+
+        lbl2 = tk.Label(frame2, text="Info", width=6)
+        lbl2.pack(side=tk.LEFT, anchor=tk.N, padx=5, pady=5)
+
+        txt = tk.Text(frame2, width=20, height=10)
+        txt.pack(fill=tk.BOTH, pady=5, padx=5, expand=True)
+
+        frame3 = tk.Frame(self._addPerson, padx=5, pady=5, borderwidth=1)
+        frame3.pack(fill=tk.X, expand=True)
+        cancelButton = tk.Button(frame3, text ="cancel",command=self.cancelAddPerson)
+        cancelButton.pack(side=tk.RIGHT)
+        okButton = tk.Button(frame3, text ="ok",command=self.okAddPerson)
+        okButton.pack(side=tk.RIGHT)
+        okButton.config(state=tk.DISABLED)
+
+    def okPerson(self):
+        print("OEOE")
+
+    def cancelPerson(self):
+        self._annotPerson.destroy();
+
+    def addAnnotation(self):
+        self._annotPerson = tk.Toplevel(self._window)
+        self._annotPerson.geometry("400x600+300+300")
+        self._annotPerson.title("person annotation")
+
+        frame1 = tk.Frame(self._annotPerson, padx=5, pady=5, relief=tk.RAISED, borderwidth=1)
+        frame1.pack(fill=tk.X)
+        lbl1 = tk.Label(frame1, text="Search", width=6)
+        lbl1.pack(side=tk.LEFT, padx=5, pady=5)
+        entry1 = tk.Entry(frame1)
+        entry1.pack(fill=tk.X, padx=5, side=tk.LEFT, expand=True)
+        addPerson = tk.Button(frame1, text ="add new", command=self.addPerson)
+        addPerson.pack(side=tk.RIGHT, padx=5, pady=5)
+ 
+        frame2 = tk.Frame(self._annotPerson, padx=5, pady=5, borderwidth=1, relief=tk.RAISED)
+        frame2.pack(fill=tk.BOTH, expand=True)
+        lbl2 = tk.Label(frame2, text="Entries", width=6)
+        lbl2.pack(side=tk.LEFT, anchor=tk.N, padx=5, pady=5)
+        entries = tk.Listbox(frame2, exportselection=False, selectmode=tk.SINGLE, width = 20, font=("arial", 12))
+        entries.pack(fill = tk.BOTH, expand=True)
+       
+        frame3 = tk.Frame(self._annotPerson, padx=5, pady=5, relief=tk.RAISED, borderwidth=1)
+        frame3.pack(fill=tk.X)
+        cancelButton = tk.Button(frame3, text ="cancel",command=self.cancelPerson)
+        cancelButton.pack(side=tk.RIGHT)
+        okButton = tk.Button(frame3, text ="ok",command=self.okPerson)
+        okButton.pack(side=tk.RIGHT)
+        okButton.config(state=tk.DISABLED)
 
     def updateAnnotations(self):
         
