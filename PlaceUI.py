@@ -102,7 +102,7 @@ class PlaceAnnotation(tk.Toplevel):
     def __init__(self, parent, quote):
         super().__init__(parent)
         self.geometry("400x600+300+300")
-        self.title("place annotation")
+        self.title("select place")
 
         frame1 = tk.Frame(self, padx=5, pady=5, relief=tk.RAISED, borderwidth=1)
         frame1.pack(fill=tk.X)
@@ -187,7 +187,7 @@ class PlaceAnnotation(tk.Toplevel):
             #print("result",numRows,"name:",name,"alternate:",alternate,"id:",row[0],"geoid:",row[1],"country:",row[8],"class/code:",row[6],"/",row[7],"pos:",row[4],"/",row[5])
             numRows += 1
 
-        print("query for place",txt,"returned:",numRows,"results")
+        #print("query for place",txt,"returned:",numRows,"results")
 
     def select(self, event):
         index = self._entries.curselection()[0]
