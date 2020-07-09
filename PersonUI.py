@@ -17,7 +17,7 @@ class PersonAnnotation(tk.Toplevel):
     def __init__(self, parent, quote):
         super().__init__(parent)
         self.geometry("400x600+300+300")
-        self.title("person annotation")
+        self.title("select person")
 
         frame1 = tk.Frame(self, padx=5, pady=5, relief=tk.RAISED, borderwidth=1)
         frame1.pack(fill=tk.X)
