@@ -44,23 +44,23 @@ class PlaceInsertion (tk.Toplevel):
         frame2 = tk.Frame(self)
         frame2.pack(fill=tk.X)
 
-        lbl2 = tk.Label(frame2, text="latitude", width=10)
+        lbl2 = tk.Label(frame2, text="longitude", width=10)
         lbl2.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self._lat = tk.StringVar()
-        self._lat.trace('w', lambda nm, idx, mode, var=self._lat: self.validate_float(var))
-        entry2 = tk.Entry(frame2, textvariable=self._lat)
+        self._long = tk.StringVar()
+        self._long.trace('w', lambda nm, idx, mode, var=self._long: self.validate_float(var))
+        entry2 = tk.Entry(frame2, textvariable=self._long)
         entry2.pack(fill=tk.X, padx=5, expand=True)
 
         frame3 = tk.Frame(self)
         frame3.pack(fill=tk.X)
 
-        lbl3 = tk.Label(frame3, text="longitude", width=10)
+        lbl3 = tk.Label(frame3, text="latitude", width=10)
         lbl3.pack(side=tk.LEFT, padx=5, pady=5)
 
-        self._long = tk.StringVar()
-        self._long.trace('w', lambda nm, idx, mode, var=self._long: self.validate_float(var))
-        entry3 = tk.Entry(frame3, textvariable=self._long)
+        self._lat = tk.StringVar()
+        self._lat.trace('w', lambda nm, idx, mode, var=self._lat: self.validate_float(var))
+        entry3 = tk.Entry(frame3, textvariable=self._lat)
         entry3.pack(fill=tk.X, padx=5, expand=True)
 
         frame4 = tk.Frame(self, padx=5, pady=5, borderwidth=1)

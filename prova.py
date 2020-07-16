@@ -109,7 +109,6 @@ class UI(object):
     # callbacks
     def selectWork(self, event):
         self._docs = {}
-        self.clearAnnotation()
         # pick value at index of mouse click
         if len(self._worksList.curselection())==0:
             return
@@ -118,9 +117,47 @@ class UI(object):
         workId = self._works[self._worksList.get(index)]
         self._docsList.delete(0, tk.END)
         records = dbAnnot.db.execute("SELECT * from docs where id_work="+str(workId))
+
+        listValues = []
+        listKeys = {}
+
+        sep = '_suffix_'
         for row in records:
-            self._docs[row[3]] = row[0]
-            self._docsList.insert(1, row[3])
+            title = row[2]
+            if title==None or title=="":
+                title = row[3]
+
+            # we need to do this to avoid losing track of titles when sorting them
+            title += sep+str(row[0])                
+            listValues.append(title)
+            listKeys[title] = row[0]
+
+        listValues = sorted(listValues, key=str.casefold)
+        index = 1
+        
+        for value in listValues:
+            idValue = listKeys[value]
+            title = value.split(sep, 1)[0]
+            fullTitle = str(index) + ": " + title 
+            self._docs[fullTitle] = idValue
+            self._docsList.insert(index, fullTitle)
+            index += 1
+
+        # clean doc
+        self.clearDoc()
+
+    def clearDoc(self):
+        self.clearAnnotation()
+        
+        self._text.config(state=tk.NORMAL)
+        self._text.delete("1.0", tk.END)
+        self._text.config(state=tk.DISABLED)
+
+        self._titleInfo.set("-")
+        self._refInfo.set("-")
+        self._dateInfo.set("-")
+        self._authorInfo.set("-")
+        self._placeInfo.set("-")
 
     def selectDoc(self, event):
         #value = docsList.get(docsList.curselection())
@@ -151,28 +188,45 @@ class UI(object):
             recordsPlace = dbAnnot.db.execute("SELECT * from places where ID="+str(doc[6]))
             place = recordsPlace.fetchone()
             self._placeInfo.set(place[2])
+        else:
+            self._placeInfo.set("-")
         # person    
         if doc[7]!=None:
             recordsPerson = dbAnnot.db.execute("SELECT * from persons where ID="+str(doc[7]))
             person = recordsPerson.fetchone()
-            self._personInfo.set(person[1])
+            self._authorInfo.set(person[1])
+        else:
+            self._authorInfo.set("-")
 
         self.updateAnnotations()
 
     def mouseUp(self, event):
         self.clearAnnotation()
-        ranges = self._text.tag_ranges(tk.SEL)
-        if ranges:
-            self._annotate.config(state=tk.NORMAL)
-            self._citedText.insert(tk.INSERT, self._text.get(*ranges))
+        ranges = self.getSelectedWords()
+        if ranges == None:
+            self._annotate.config(state=tk.DISABLED)
+            return
+        self._annotate.config(state=tk.NORMAL)
+        self._citedText.insert(tk.INSERT, self._text.get(*ranges))
 
     def clearAnnotation(self):
         self._citedText.delete("1.0", tk.END)
         self._annotate.config(state=tk.DISABLED)
 
+    def getSelectedWords(self):       
+        ranges = self._text.tag_ranges(tk.SEL)
+        if ranges==None or len(ranges)==0:
+            return None
+
+        range0Str = str(ranges[0]) + " wordstart"
+        range1Str = str(ranges[1]) + " wordend - 1 chars"
+        range0 = self._text.index(range0Str)
+        range1 = self._text.index(range1Str)
+        adjustedRanges = (range0, range1)
+        return adjustedRanges
 
     def addAnnotation(self):
-        self._rangeSelected = self._text.tag_ranges(tk.SEL)
+        self._rangeSelected = self.getSelectedWords()
         selectedText = self._text.get(*self._rangeSelected)
         if self._typeSelected=="person":
             self._annotPerson = PersonAnnotation(self._window, selectedText)
@@ -415,8 +469,8 @@ class UI(object):
 
         seriesList = []
         for row in records:
-            self._seriesIds[row[1]] = row[0]
-            seriesList.append(row[1])
+            self._seriesIds[row[3]] = row[0]
+            seriesList.append(row[3])
 
         self._seriesCombo['values'] = seriesList
 
@@ -536,12 +590,23 @@ class UI(object):
     def updateWorkList(self):
 
         self._works = {}
+        listValues = []
+
         self._worksList.delete(0, tk.END)
 
         records = dbAnnot.db.execute("SELECT * FROM works")
+
         for row in records:
-            self._works[row[1]] = row[0]
-            self._worksList.insert(1,row[1])
+            listValues.append(row[3])
+            self._works[row[3]] = row[0]
+
+
+        listValues = sorted(listValues, key=str.casefold)
+        index = 0
+
+        for value in listValues:
+            self._worksList.insert(index, value)
+            index += 1
         
 
     def setAuthor(self, idPerson):
