@@ -7,15 +7,15 @@ dbConnection = sq.connect("annot.db")
 db = dbConnection.cursor()
 
 # remove everything from table
-db.execute("delete from places")
-db.execute("DELETE FROM sqlite_sequence WHERE name = 'places'")
+#db.execute("delete from places")
+#db.execute("DELETE FROM sqlite_sequence WHERE name = 'places'")
 
 geoFile = open("geonames/allCountries.txt", "r")
 reader = csv.reader(geoFile, delimiter='\t')
 
 num = 0
 numToInsert = 0
-countries = ["ES","FR","DE","BE","IT","UK"]
+countries = ["ES","FR","DE","BE","IT","GB", "AT"]
 
 for line in reader:
     geonameId = line[0]
@@ -46,5 +46,5 @@ for line in reader:
 
 # last inserts    
 dbConnection.commit()
-print("inserted: "+numToInsert,"from:",num,"records")
+print("inserted: ",numToInsert,"from:",num,"records")
 
