@@ -379,18 +379,21 @@ class UI(object):
         citeFrame.pack(fill=tk.BOTH, expand=True)
 
         frame = tk.Frame(citeFrame)
-        frame.pack(fill=tk.X, expand=True, pady=5)
+        frame.pack(fill=tk.X, pady=1)
 
         label = tk.Label(frame, text="Title: ", width=10)
-        label.pack(side=tk.LEFT, padx=1, pady=5)
+        label.pack(side=tk.LEFT, padx=1)
         self._titleInfo = tk.StringVar()
         self._titleInfo.set("-")
         entry = tk.Entry(frame, textvariable=self._titleInfo)
         entry.pack(side=tk.LEFT, fill=tk.X, padx=1, expand=True)
         entry.config(state="readonly")
-                
+    
+        frame = tk.Frame(citeFrame)
+        frame.pack(fill=tk.X)
+       
         label = tk.Label(frame, text="Reference: ", width=10)
-        label.pack(side=tk.LEFT, padx=1, pady=5)
+        label.pack(side=tk.LEFT, padx=1, pady=1)
         self._refInfo = tk.StringVar()
         self._refInfo.set("-")
         entry = tk.Entry(frame, textvariable=self._refInfo)
