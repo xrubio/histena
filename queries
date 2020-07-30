@@ -1,3 +1,0 @@
-totes els llocs que surten al castellví
-
-select * from places inner join annotation_place on places.id=annotation_place.id_place 
