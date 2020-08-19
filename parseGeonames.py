@@ -7,8 +7,8 @@ dbConnection = sq.connect("annot.db")
 db = dbConnection.cursor()
 
 # remove everything from table
-#db.execute("delete from places")
-#db.execute("DELETE FROM sqlite_sequence WHERE name = 'places'")
+#db.execute("delete from locations")
+#db.execute("DELETE FROM sqlite_sequence WHERE name = 'locations'")
 
 geoFile = open("geonames/allCountries.txt", "r")
 reader = csv.reader(geoFile, delimiter='\t')
@@ -34,7 +34,7 @@ for line in reader:
     if country not in countries:
         continue
 
-    sql = 'INSERT INTO places (geonameId, name, alternate, lat, long, class, code, country) VALUES (?,?,?,?,?,?,?,?)'
+    sql = 'INSERT INTO locations (geonameId, name, alternate, lat, long, class, code, country) VALUES (?,?,?,?,?,?,?,?)'
     values = (geonameId, name, alternate, latCoord, longCoord, featureClass, featureCode, country)
     db.execute(sql, values)
 

@@ -8,7 +8,7 @@ from tkinter import ttk
 import dbAnnot
 from dbAnnot import *
 
-class PlaceInsertion (tk.Toplevel):   
+class LocationInsertion (tk.Toplevel):   
 
     # signal/callback to update person entries
     signalAdded = None
@@ -18,7 +18,7 @@ class PlaceInsertion (tk.Toplevel):
     def validate_float(self, var):
         new_value = var.get()
         try:
-            new_value == '' or float(new_value)
+            new_value == '' or '-' or float(new_value)
             self._old_value = new_value
         except:
             var.set(self._old_value)    
@@ -26,7 +26,7 @@ class PlaceInsertion (tk.Toplevel):
     def __init__(self, parent, initialText):
         super().__init__(parent)
         self.geometry("400x300+800+300")
-        self.title("add custom place")
+        self.title("add custom location")
 
         frame1 = tk.Frame(self)
         frame1.pack(fill=tk.X)
@@ -34,11 +34,11 @@ class PlaceInsertion (tk.Toplevel):
         lbl1 = tk.Label(frame1, text="Name", width=10)
         lbl1.pack(side=tk.LEFT, padx=5, pady=5)
         
-        self._placeName = tk.StringVar()
-        self._placeName.set(initialText)
-        self._placeName.trace_add("write", self.enableEntry)
+        self._locationName = tk.StringVar()
+        self._locationName.set(initialText)
+        self._locationName.trace_add("write", self.enableEntry)
         
-        entry1 = tk.Entry(frame1, textvariable=self._placeName)
+        entry1 = tk.Entry(frame1, textvariable=self._locationName)
         entry1.pack(fill=tk.X, padx=5, expand=True)
 
         frame2 = tk.Frame(self)
@@ -78,8 +78,8 @@ class PlaceInsertion (tk.Toplevel):
         self.destroy();
 
     def ok(self):
-        sql = 'INSERT INTO places (name, lat, long) VALUES (?,?,?)'
-        values = (self._placeName.get(), float(self._lat.get()), float(self._long.get()))
+        sql = 'INSERT INTO locations (name, lat, long) VALUES (?,?,?)'
+        values = (self._locationName.get(), float(self._lat.get()), float(self._long.get()))
         dbAnnot.db.execute(sql, values)
         dbAnnot.conn.commit()
 
@@ -87,13 +87,13 @@ class PlaceInsertion (tk.Toplevel):
         self.destroy()
 
     def enableEntry(self, var, index, mode):
-        if self._placeName.get()=="":
+        if self._locationName.get()=="":
             self._okButton.config(state=tk.DISABLED)
         else:
             self._okButton.config(state=tk.NORMAL)
 
 
-class PlaceAnnotation(tk.Toplevel):
+class LocationAnnotation(tk.Toplevel):
 
     # signal to main window that it needs to update citations
     signalAdd = None
@@ -102,7 +102,7 @@ class PlaceAnnotation(tk.Toplevel):
     def __init__(self, parent, quote):
         super().__init__(parent)
         self.geometry("400x600+300+300")
-        self.title("select place")
+        self.title("select location")
 
         frame1 = tk.Frame(self, padx=5, pady=5, relief=tk.RAISED, borderwidth=1)
         frame1.pack(fill=tk.X)
@@ -136,7 +136,7 @@ class PlaceAnnotation(tk.Toplevel):
         self._search.set(quote)
 
     def addNew(self):
-        self._add = PlaceInsertion(self, self._search.get())
+        self._add = LocationInsertion(self, self._search.get())
         self._add.signalAdded = self.added
 
     def added(self):
@@ -152,7 +152,7 @@ class PlaceAnnotation(tk.Toplevel):
         if len(txt)<3:
             return
 
-        records = dbAnnot.db.execute("SELECT * from places where name LIKE '%"+txt+"%' OR alternate LIKE '%"+txt+"%'")
+        records = dbAnnot.db.execute("SELECT * from locations where name LIKE '%"+txt+"%' OR alternate LIKE '%"+txt+"%'")
 
         numRows = 0
         for row in records:
@@ -160,7 +160,7 @@ class PlaceAnnotation(tk.Toplevel):
             geoId = row[1]
 
             rowText = name
-            # if the places com from geonames
+            # if the locations com from geonames
             if geoId!=None:
                 featureClass = row[6]
                 featureCode = row[7]
@@ -180,18 +180,17 @@ class PlaceAnnotation(tk.Toplevel):
                 rowText += " ["+pos+"]"
 
             else:
-                rowText += " (custom place)"
+                rowText += " (custom location)"
                 
             self._ids[rowText] = row[0]
             self._entries.insert(1,rowText)
             #print("result",numRows,"name:",name,"alternate:",alternate,"id:",row[0],"geoid:",row[1],"country:",row[8],"class/code:",row[6],"/",row[7],"pos:",row[4],"/",row[5])
             numRows += 1
 
-        #print("query for place",txt,"returned:",numRows,"results")
+        #print("query for location",txt,"returned:",numRows,"results")
 
     def select(self, event):
         index = self._entries.curselection()[0]
-        print("index:",index,"id:",self._ids[self._entries.get(index)])
         self._ok.config(state=tk.NORMAL)
 
     def cancel(self):
@@ -203,8 +202,8 @@ class PlaceAnnotation(tk.Toplevel):
     def ok(self): 
         # get person id
         index = self._entries.curselection()[0]
-        idPlace = self._ids[self._entries.get(index)]
-        self.signalAdd(idPlace)
+        idLocation = self._ids[self._entries.get(index)]
+        self.signalAdd(idLocation)
 
         # close window
         self.destroy()

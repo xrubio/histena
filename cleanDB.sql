@@ -1,7 +1,7 @@
 
 
 delete from annotationKeyword;
-delete from annotationPlace;
+delete from annotationLocation;
 delete from annotationPerson;
 delete from annotations;
 
@@ -19,6 +19,6 @@ DELETE FROM sqlite_sequence WHERE name = 'annotations';
 
 
 
-# all places!
-#delete from places
-#DELETE FROM sqlite_sequence WHERE name = 'places'
+# all locations!
+#delete from locations
+#DELETE FROM sqlite_sequence WHERE name = 'locations'

@@ -64,6 +64,7 @@ class KeywordAnnotation(tk.Toplevel):
         self._entries.delete(0, tk.END)
         # dictionary with name as key and id as value
         self._ids = {}
+        listValues = []
 
         for row in records:
             keyword = row[1]
@@ -72,7 +73,14 @@ class KeywordAnnotation(tk.Toplevel):
                 continue
                 
             self._ids[keyword] = row[0]
-            self._entries.insert(1,keyword)
+            listValues.append(keyword)
+
+        listValues = sorted(listValues, key=str.casefold)
+        index = 0
+
+        for value in listValues:
+            self._entries.insert(index, value)
+            index += 1
 
     def select(self, event):
         index = self._entries.curselection()[0]

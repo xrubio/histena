@@ -11,7 +11,7 @@ from Tooltip import *
 import dbAnnot
 from dbAnnot import *
 from PersonUI import *
-from PlaceUI import *
+from LocationUI import *
 from KeywordUI import *
 
 class NewWork(tk.Toplevel):   
@@ -99,6 +99,8 @@ class UI(object):
         self._window.title("text annotation")   
         self._window.geometry("1800x1000")
         self._tabs = ttk.Notebook(self._window)    
+        
+        self._window.bind("<KeyPress>", self.keyDown)
 
         self.createDocsTab();
         self.createCiteFrame();
@@ -106,6 +108,23 @@ class UI(object):
         
         self._tabs.pack(expand=1, fill="both")
 
+    def keyDown(self, key):
+    
+        # location
+        if key.char == "l":
+            self._typeSelected = "location"
+            self.addAnnotation()
+            return
+        # person    
+        if key.char == "p":    
+            self._typeSelected = "person"
+            self.addAnnotation()
+            return
+        # keyword
+        if key.char == "k":
+            self._typeSelected = "keyword"
+            self.addAnnotation()
+            return
     # callbacks
     def selectWork(self, event):
         self._docs = {}
@@ -122,13 +141,19 @@ class UI(object):
         listKeys = {}
 
         sep = '_suffix_'
-        for row in records:
+        for row in records.fetchall():
             title = row[2]
             if title==None or title=="":
                 title = row[3]
 
             # we need to do this to avoid losing track of titles when sorting them
-            title += sep+str(row[0])                
+            title += sep+str(row[0])
+
+            # add * if doc has no annotations
+            annotDoc = dbAnnot.db.execute("SELECT * from annotations where id_doc="+str(row[0]))
+            if len(annotDoc.fetchall())==0:
+                title = "*** "+title
+
             listValues.append(title)
             listKeys[title] = row[0]
 
@@ -157,7 +182,7 @@ class UI(object):
         self._refInfo.set("-")
         self._dateInfo.set("-")
         self._authorInfo.set("-")
-        self._placeInfo.set("-")
+        self._locationInfo.set("-")
 
     def selectDoc(self, event):
         #value = docsList.get(docsList.curselection())
@@ -183,13 +208,13 @@ class UI(object):
         self._dateInfo.set(doc[3])
         self._refInfo.set(doc[5])
 
-        # place
+        # location
         if doc[6]!=None:
-            recordsPlace = dbAnnot.db.execute("SELECT * from places where ID="+str(doc[6]))
-            place = recordsPlace.fetchone()
-            self._placeInfo.set(place[2])
+            recordsLocation = dbAnnot.db.execute("SELECT * from locations where ID="+str(doc[6]))
+            location = recordsLocation.fetchone()
+            self._locationInfo.set(location[2])
         else:
-            self._placeInfo.set("-")
+            self._locationInfo.set("-")
         # person    
         if doc[7]!=None:
             recordsPerson = dbAnnot.db.execute("SELECT * from persons where ID="+str(doc[7]))
@@ -219,7 +244,16 @@ class UI(object):
             return None
 
         range0Str = str(ranges[0]) + " wordstart"
-        range1Str = str(ranges[1]) + " wordend - 1 chars"
+        range1Str = str(ranges[1]) + " wordend"
+
+        # if double click then it also select 1 last char that needs to be removed
+        firstChar = self._text.get(range0Str, range0Str + "+ 1 chars")
+        lastChar = self._text.get(range1Str + "- 1 chars", range1Str)
+        if not firstChar.isalnum():
+            range0Str = str(ranges[0]) + " wordstart +1 chars"
+        if not lastChar.isalnum():
+            range1Str = str(ranges[1]) + " wordend -1 chars"
+               
         range0 = self._text.index(range0Str)
         range1 = self._text.index(range1Str)
         adjustedRanges = (range0, range1)
@@ -232,9 +266,9 @@ class UI(object):
             self._annotPerson = PersonAnnotation(self._window, selectedText)
             self._annotPerson .signalAdd = self.addPerson
             return
-        if self._typeSelected=="place":
-            self._annotPlace = PlaceAnnotation(self._window, selectedText)
-            self._annotPlace.signalAdd = self.addPlace
+        if self._typeSelected=="location":
+            self._annotLocation = LocationAnnotation(self._window, selectedText)
+            self._annotLocation.signalAdd = self.addLocation
             return
         if self._typeSelected=="keyword":
             self._annotKeyword = KeywordAnnotation(self._window, selectedText)
@@ -247,11 +281,11 @@ class UI(object):
 
         # clear tags before adding them
         self._text.tag_delete("keyword")
-        self._text.tag_delete("place")
+        self._text.tag_delete("location")
         self._text.tag_delete("person")
 
         self._text.tag_config("keyword",  background="green", foreground="black", font=("arial", "12", "bold"))
-        self._text.tag_config("place", background="yellow", foreground="black", font=("arial", "12", "bold"))
+        self._text.tag_config("location", background="yellow", foreground="black", font=("arial", "12", "bold"))
         self._text.tag_config("person", background="red", foreground="black", font=("arial", "12", "bold"))
 
     def updateAnnotations(self):   
@@ -320,26 +354,26 @@ class UI(object):
         # build text
         return "person: "+person[1]+"\n\ninfo: "+person[2]
 
-    def getPlaceTooltip(self, idAnnotation):
-        # get idPlace linked to this idAnnotation
-        records = dbAnnot.db.execute("SELECT id_place from annotationPlace where id_annotation="+str(idAnnotation))
-        idPlace = records.fetchone()[0]
+    def getLocationTooltip(self, idAnnotation):
+        # get idLocation linked to this idAnnotation
+        records = dbAnnot.db.execute("SELECT id_location from annotationLocation where id_annotation="+str(idAnnotation))
+        idLocation = records.fetchone()[0]
 
         # get person info
-        records = dbAnnot.db.execute("SELECT * from places where id="+str(idPlace))
-        place = records.fetchone()
+        records = dbAnnot.db.execute("SELECT * from locations where id="+str(idLocation))
+        location = records.fetchone()
 
         #print("id annotation:",idAnnotation,"id person:",idPerson,"name:",person[1])
         # build text
-        text = "place: "+place[2]+"\n\ninfo:"
-        if place[1]==None:
-            text += "(custom place)"
+        text = "location: "+location[2]+"\n\ninfo:"
+        if location[1]==None:
+            text += "(custom location)"
         # from geonames
         else:
-            featureClass = place[6]
-            featureCode = place[7]
-            country = place[8]
-            pos = str(place[4])+"/"+str(place[5])
+            featureClass = location[6]
+            featureCode = location[7]
+            country = location[8]
+            pos = str(location[4])+"/"+str(location[5])
 
             text+= " ("+country+")"
             if featureClass=="P":
@@ -366,8 +400,8 @@ class UI(object):
             if self._text.compare(currentIndex, ">=", annotation[2]) and self._text.compare(currentIndex, "<=", annotation[3]):
                 if annotation[1]=="person":
                     return self.getPersonTooltip(annotation[0])
-                elif annotation[1]=="place":
-                    return self.getPlaceTooltip(annotation[0])
+                elif annotation[1]=="location":
+                    return self.getLocationTooltip(annotation[0])
                 elif annotation[1]=="keyword":
                     return self.getKeywordTooltip(annotation[0])
 
@@ -416,11 +450,11 @@ class UI(object):
         entry.pack(side=tk.LEFT, fill=tk.X, padx=1, expand=True)
         entry.config(state="readonly")
 
-        label = tk.Label(frame, text="Place: ", width=10)
+        label = tk.Label(frame, text="Location: ", width=10)
         label.pack(side=tk.LEFT, padx=1, pady=5)
-        self._placeInfo = tk.StringVar()
-        self._placeInfo.set("-")
-        entry = tk.Entry(frame, textvariable=self._placeInfo)
+        self._locationInfo = tk.StringVar()
+        self._locationInfo.set("-")
+        entry = tk.Entry(frame, textvariable=self._locationInfo)
         entry.pack(side=tk.LEFT, fill=tk.X, padx=1, expand=True)
         entry.config(state="readonly")
 
@@ -446,7 +480,7 @@ class UI(object):
         options.pack(side=tk.RIGHT, fill=tk.Y)
     
         # type of annotation
-        annotTypes = [("keyword", 2, "green"), ("place", 1, "yellow"), ("person", 3, "red") ]
+        annotTypes = [("keyword", 2, "green"), ("location", 1, "yellow"), ("person", 3, "red") ]
 
         varType = tk.IntVar()
         # first selection before any click
@@ -539,16 +573,16 @@ class UI(object):
         addButton = tk.Button(frame, text ="add", command=self.addAuthorToDoc)
         addButton.pack(side=tk.LEFT, padx=1, pady=5)
          
-        label = tk.Label(frame, text="Place", width=10)
+        label = tk.Label(frame, text="Location", width=10)
         label.pack(side=tk.LEFT, padx=5, pady=5)
     
-        self._place = tk.StringVar()
-        self._place.set("")
-        entry  = tk.Entry(frame, textvariable=self._place, width=20)
+        self._location = tk.StringVar()
+        self._location.set("")
+        entry  = tk.Entry(frame, textvariable=self._location, width=20)
         entry.pack(side=tk.LEFT, padx=5, pady=5)   
         entry.config(state="readonly")
     
-        addButton = tk.Button(frame, text ="add", command=self.addPlaceToDoc)
+        addButton = tk.Button(frame, text ="add", command=self.addLocationToDoc)
         addButton.pack(side=tk.LEFT, padx=1, pady=5)
       
         frame = tk.Frame(self._worksTab)
@@ -570,10 +604,10 @@ class UI(object):
         valuesSql = " VALUES (?,?,?,?,?"
         values = (idWork, self._docTitle.get(), self._date.get(), self._docText.get(1.0, tk.END), self._refDoc.get())
 
-        if self._place.get()!="":
-            sql += ",id_place"
+        if self._location.get()!="":
+            sql += ",id_location"
             valuesSql += ",?"
-            values += (self._placeId,)
+            values += (self._locationId,)
         
         if self._author.get()!="":
             sql += ",id_author"
@@ -625,16 +659,16 @@ class UI(object):
         author.signalAdd = self.setAuthor
 
 
-    def setPlace(self, idPlace):
-        records = dbAnnot.db.execute("SELECT * from places where id="+str(idPlace))
-        place = records.fetchone()
+    def setLocation(self, idLocation):
+        records = dbAnnot.db.execute("SELECT * from locations where id="+str(idLocation))
+        location = records.fetchone()
 
-        self._place.set(place[2])
-        self._placeId = idPlace 
+        self._location.set(location[2])
+        self._locationId = idLocation 
 
-    def addPlaceToDoc(self):
-        place = PlaceAnnotation(self._window, "type to find places")
-        place.signalAdd = self.setPlace
+    def addLocationToDoc(self):
+        location = LocationAnnotation(self._window, "type to find locations")
+        location.signalAdd = self.setLocation
 
     def addKeyword(self, idKeyword):
         # insert annotation
@@ -682,7 +716,7 @@ class UI(object):
 
         self.updateAnnotations()
 
-    def addPlace(self, idPlace):
+    def addLocation(self, idLocation):
         # insert annotation
         sql = 'INSERT INTO annotations (type,begin,end,id_doc) VALUES (?,?,?,?)'
   
@@ -697,9 +731,9 @@ class UI(object):
         records = dbAnnot.db.execute("SELECT last_insert_rowid()")
         idAnnot = records.fetchone()[0]
         
-        # insert place-annotation ids
-        sql = 'INSERT INTO annotationPlace (id_annotation,id_place) VALUES (?,?)'
-        values = (idAnnot, idPlace)
+        # insert location-annotation ids
+        sql = 'INSERT INTO annotationLocation (id_annotation,id_location) VALUES (?,?)'
+        values = (idAnnot, idLocation)
         dbAnnot.db.execute(sql, values)
         dbAnnot.conn.commit()
 
