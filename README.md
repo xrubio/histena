@@ -8,4 +8,5 @@ Software to tag historical documents based on:
 * locations
 * keywords
 
+Currently working on naval campaign 1713-1714
 
