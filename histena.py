@@ -1,18 +1,47 @@
 #!/usr/bin/python3
 
 import tkinter as tk
+import tkinter.ttk as ttk
 import sqlite3 as sq 
 
-from tkinter import ttk
 from tkinter import messagebox 
 
-from Tooltip import *
+from time import sleep
 
+import tooltip
+from tooltip import *
 import dbAnnot
 from dbAnnot import *
 from PersonUI import *
 from LocationUI import *
 from KeywordUI import *
+
+from threading import Timer
+
+class RepeatedTimer(object):
+    def __init__(self, interval, function, *args, **kwargs):
+        self._timer     = None
+        self.function   = function
+        self.interval   = interval
+        self.args       = args
+        self.kwargs     = kwargs
+        self.is_running = False
+        self.start()
+
+    def _run(self):
+        self.is_running = False
+        self.start()
+        self.function(*self.args, **self.kwargs)
+
+    def start(self):
+        if not self.is_running:
+            self._timer = Timer(self.interval, self._run)
+            self._timer.start()
+            self.is_running = True
+
+    def stop(self):
+        self._timer.cancel()
+        self.is_running = False
 
 class NewWork(tk.Toplevel):   
 
@@ -65,6 +94,7 @@ class NewWork(tk.Toplevel):
         self._okButton.config(state=tk.DISABLED)
 
     def cancel(self):
+        print("oeoeoe")
         self.destroy();
 
     def ok(self):
@@ -388,13 +418,6 @@ class UI(object):
         return text
 
     def setTooltipText(self):
-        # get range index for mouse
-        #x = self._text.winfo_pointerx() - self._text.winfo_rootx()
-        #y = self._text.winfo_pointery() - self._text.winfo_rooty()
-        #index1 = self._text.index("@"+str(x)+","+str(y))
-        #index2 = 
-        #hoverText = self._text.get( "@"+str(x+20)+","+str(y))
-        #hoverText = self._text.get("1.0",tk.END)
         currentIndex = self._text.index(tk.CURRENT)
         for annotation in self._annotations:
             if self._text.compare(currentIndex, ">=", annotation[2]) and self._text.compare(currentIndex, "<=", annotation[3]):
@@ -406,6 +429,18 @@ class UI(object):
                     return self.getKeywordTooltip(annotation[0])
 
         return "" 
+
+    def updateTooltip(self, tooltipText):
+        tooltipText.msg = self.setTooltipText()
+        """
+        TODO hide tooltipText if msg is empty
+        if tooltipText.msg=="" and tooltipText.state()!='withdrawn':
+            print("aa")
+            tooltipText.withdraw()
+        elif tooltipText.msg!="" and tooltipText.state()!='normal':
+            print("bb")
+            tooltipText.deiconify()
+        """
 
     def createCiteFrame(self):
 
@@ -465,8 +500,10 @@ class UI(object):
         self._text.bind("<ButtonRelease-1>", self.mouseUp)
         self._text.config(wrap=tk.WORD)
         self._text.config(state=tk.DISABLED)
-        tooltipText = Tooltip(self._text, wraplength=200)
-        tooltipText.signalSetTooltipText = self.setTooltipText
+        tooltipText = ToolTip(self._text)
+        tooltipText.follow = True 
+        tooltipText.delay = 0.1
+        self.rt = RepeatedTimer(0.1, self.updateTooltip, tooltipText)
 
         self.resetTags()
         citedTextFrame = tk.Frame(citeFrame)
@@ -739,7 +776,12 @@ class UI(object):
 
         self.updateAnnotations()
 
+    def onClose(self):
+        self.rt.stop()
+        self._window.destroy()
+
     def run(self):
+        self._window.protocol("WM_DELETE_WINDOW", self.onClose)
         self._window.mainloop()
 
 
