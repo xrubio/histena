@@ -17,6 +17,7 @@ from LocationUI import *
 from KeywordUI import *
 
 from threading import Timer
+import functools
 
 class RepeatedTimer(object):
     def __init__(self, interval, function, *args, **kwargs):
@@ -114,6 +115,25 @@ class NewWork(tk.Toplevel):
         else:
             self._okButton.config(state=tk.NORMAL)
 
+    # callbacks
+def compareByDate(item):
+    
+    # order of comparison: state, year, month, day
+    # state = 0 for untagged, 1 for standard, 2 for no date
+
+    state = '1'
+    sep = '_id_'
+    date,idDoc = item.split(sep,1)
+
+    # already tagged
+    if "untagged" in idDoc:
+        state = '0'
+
+    if date == "undated":
+        return ("2", "0","0","0")
+
+    day,month,year = date.split("/")
+    return(state,year,month,day)
 
 class UI(object):
 
@@ -155,7 +175,8 @@ class UI(object):
             self._typeSelected = "keyword"
             self.addAnnotation()
             return
-    # callbacks
+
+
     def selectWork(self, event):
         self._docs = {}
         # pick value at index of mouse click
@@ -168,32 +189,39 @@ class UI(object):
         records = dbAnnot.db.execute("SELECT * from docs where id_work="+str(workId))
 
         listValues = []
-        listKeys = {}
 
-        sep = '_suffix_'
+        sep = '_id_'
+
+        # docs are sorted by date
         for row in records.fetchall():
-            title = row[2]
-            if title==None or title=="":
-                title = row[3]
+            date = row[3]
+            if date==None or date=="":
+                date=  "undated"
+                
+            # we need to do this to avoid losing track of id when sorting them
+            date = date + sep+str(row[0])
 
-            # we need to do this to avoid losing track of titles when sorting them
-            title += sep+str(row[0])
-
-            # add * if doc has no annotations
+            # add warning if doc has no annotations
             annotDoc = dbAnnot.db.execute("SELECT * from annotations where id_doc="+str(row[0]))
             if len(annotDoc.fetchall())==0:
-                title = "*** "+title
+                date = date + "untagged*"
 
-            listValues.append(title)
-            listKeys[title] = row[0]
+            listValues.append(date)
 
-        listValues = sorted(listValues, key=str.casefold)
-        index = 1
-        
+        listValues.sort(key=compareByDate)
+
+        index = 1       
         for value in listValues:
-            idValue = listKeys[value]
-            title = value.split(sep, 1)[0]
-            fullTitle = str(index) + ": " + title 
+            idValue = value.split(sep, 1)[1] 
+            date = value.split(sep, 1)[0]
+
+            fullTitle = str(index) + ": " + date 
+            
+            # untagged, add a visible mark
+            if "untagged" in value:
+                fullTitle = "*** "+fullTitle
+                idValue = idValue[0:idValue.find("untagged")]
+                
             self._docs[fullTitle] = idValue
             self._docsList.insert(index, fullTitle)
             index += 1
