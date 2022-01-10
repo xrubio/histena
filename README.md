@@ -1,7 +1,7 @@
 
 # annotation
 
-Histena: Historical Text Annotation
+Histena: HIStorical TExt NAvigation 
 
 Software to tag historical documents based on:
 * persons
